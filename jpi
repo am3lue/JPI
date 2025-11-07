@@ -1,0 +1,127 @@
+#!/bin/bash
+# jpi — Julia Package Installer Helper (by @am3lue)
+
+# ---------------------------------------------
+# 🎨 COLORS
+# ---------------------------------------------
+BOLD="\033[1m"
+GREEN="\033[1;32m"
+RED="\033[1;31m"
+YELLOW="\033[1;33m"
+BLUE="\033[1;34m"
+CYAN="\033[1;36m"
+RESET="\033[0m"
+
+# ---------------------------------------------
+# 📘 FUNCTION: HELP MENU
+# ---------------------------------------------
+show_help() {
+  clear
+  echo -e "${BOLD}${CYAN}╔═══════════════════════════════════════════════════╗${RESET}"
+  echo -e "${BOLD}${CYAN}║            🌟 JULIA PACKAGE INSTALLER (JPI) 🌟    ║${RESET}"
+  echo -e "${BOLD}${CYAN}╚═══════════════════════════════════════════════════╝${RESET}"
+  echo
+  echo -e "${BOLD}${YELLOW}Usage:${RESET}"
+  echo -e "  ${GREEN}jpi <PackageName>${RESET}           → Install a single package"
+  echo -e "  ${GREEN}jpi -r <file>${RESET}               → Install packages listed in a file"
+  echo -e "  ${GREEN}jpi -u${RESET}                      → Update all installed packages"
+  echo -e "  ${GREEN}jpi -rm <PackageName>${RESET}       → Remove (uninstall) a package"
+  echo -e "  ${GREEN}jpi -l${RESET}                      → List installed packages"
+  echo -e "  ${GREEN}jpi -h${RESET} or ${GREEN}--help${RESET}         → Show this help menu"
+  echo
+  echo -e "${BOLD}${YELLOW}Examples:${RESET}"
+  echo -e "  jpi Genie"
+  echo -e "  jpi -r requirements.txt"
+  echo -e "  jpi -rm DataFrames"
+  echo
+  echo -e "${BOLD}${YELLOW}Notes:${RESET}"
+  echo -e "  • Commands are ${GREEN}case-insensitive${RESET} (you can type 'JPI Genie' or 'jpi genie')."
+  echo -e "  • File names in -r are case-sensitive as usual."
+  echo
+  echo -e "${BOLD}${BLUE}Made with 💙 by @am3lue${RESET}"
+  echo
+}
+
+# ---------------------------------------------
+# 🚦 NO ARGUMENTS = SHOW HELP
+# ---------------------------------------------
+if [ $# -eq 0 ]; then
+  show_help
+  exit 0
+fi
+
+# ---------------------------------------------
+# 🔠 LOWERCASE CONVERSION (CASE-INSENSITIVE FLAGS)
+# ---------------------------------------------
+arg1=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+
+# ---------------------------------------------
+# 🧩 MAIN COMMAND HANDLER
+# ---------------------------------------------
+case "$arg1" in
+  -h)
+    show_help
+    ;;
+    
+  --help)
+  
+    show_help
+    ;;
+    
+  -r)
+    # install from requirements file (case-sensitive filename)
+    if [ -z "$2" ]; then
+      echo -e "${RED}❌ Please specify a requirements file.${RESET}"
+      exit 1
+    fi
+    if [ -f "$2" ]; then
+      echo -e "${YELLOW}📦 Installing packages from file:${RESET} ${BOLD}$2${RESET}"
+      while IFS= read -r pkg; do
+        [ -z "$pkg" ] && continue  # skip empty lines
+        pkg_clean=$(echo "$pkg" | xargs) # trim spaces
+        pkg_lower=$(echo "$pkg_clean" | tr '[:upper:]' '[:lower:]')
+        echo -e "${BLUE}➡️  Installing${RESET} ${BOLD}$pkg_lower${RESET}..."
+        julia -e "using Pkg; Pkg.add(\"$pkg_clean\")" >/dev/null 2>&1 \
+          && echo -e "${GREEN}✅ Installed:${RESET} $pkg_clean" \
+          || echo -e "${RED}❌ Failed:${RESET} $pkg_clean"
+      done < "$2"
+      echo -e "${GREEN}🎉 All packages processed!${RESET}"
+    else
+      echo -e "${RED}❌ File not found:${RESET} $2"
+      exit 1
+    fi
+    ;;
+
+  -u)
+    echo -e "${YELLOW}🔄 Updating all packages...${RESET}"
+    julia -e "using Pkg; Pkg.update()" >/dev/null 2>&1 \
+      && echo -e "${GREEN}✅ All packages are up to date.${RESET}" \
+      || echo -e "${RED}❌ Update failed.${RESET}"
+    ;;
+
+  -rm)
+    if [ -z "$2" ]; then
+      echo -e "${RED}❌ Please specify a package name to remove.${RESET}"
+      exit 1
+    fi
+    pkg_clean=$(echo "$2" | xargs)
+    echo -e "${YELLOW}🗑️  Removing package:${RESET} ${BOLD}$pkg_clean${RESET}"
+    julia -e "using Pkg; Pkg.rm(\"$pkg_clean\")" >/dev/null 2>&1 \
+      && echo -e "${GREEN}✅ Removed:${RESET} $pkg_clean" \
+      || echo -e "${RED}❌ Failed to remove package.${RESET}"
+    ;;
+
+  -l)
+    echo -e "${YELLOW}📋 Installed Julia packages:${RESET}"
+    julia -e 'using Pkg; for (k,v) in Pkg.dependencies() ; v.is_direct_dep && println(k) end' \
+      || echo -e "${RED}❌ Could not list packages.${RESET}"
+    ;;
+
+  *)
+    pkg_clean=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+    echo -e "${YELLOW}📦 Installing Julia package:${RESET} ${BOLD}$pkg_clean${RESET}"
+    julia -e "using Pkg; Pkg.add(\"$1\")" >/dev/null 2>&1 \
+      && echo -e "${GREEN}✅ Done!${RESET}" \
+      || echo -e "${RED}❌ Installation failed!${RESET}"
+    ;;
+esac
