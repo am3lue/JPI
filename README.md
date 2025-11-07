@@ -36,7 +36,7 @@ While Julia’s built-in `Pkg` REPL is powerful, it can feel complex for new use
 ## 🖥️ Screenshot (Help Menu)
 
 
-![JPI Help Menu](https://raw.githubusercontent.com/am3lue/jpi/main/assets/example.png)
+![JPI Help Menu](https://raw.githubusercontent.com/am3lue/jpi/main/example.png)
 ---
 
 ## ⚙️ Installation
